@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Inventário Trousseau · Abr-Mai 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Archivo:wght@400;500;600;700;800&display=swap');
+:root{
+  --ink:#1a1614; --bg:#f4f0ea; --panel:#fffdf9; --line:#e4ddd1;
+  --gold:#b08d4f; --gold2:#d4b87a; --green:#2f6b4f; --red:#b03a2e;
+  --amber:#c98a2b; --muted:#857a6c; --shadow:0 1px 3px rgba(40,30,15,.06),0 8px 24px rgba(40,30,15,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Archivo',sans-serif;
+  background-image:radial-gradient(circle at 12% 8%,rgba(176,141,79,.05),transparent 45%),radial-gradient(circle at 88% 92%,rgba(47,107,79,.04),transparent 45%);
+  min-height:100vh;padding:28px 32px 60px}
+.wrap{max-width:1440px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;
+  border-bottom:2px solid var(--ink);padding-bottom:18px;margin-bottom:26px}
+.brand{font-family:'Fraunces',serif;font-weight:600;font-size:13px;letter-spacing:.42em;text-transform:uppercase;color:var(--gold)}
+h1{font-family:'Fraunces',serif;font-weight:600;font-size:34px;line-height:1.05;margin-top:6px}
+.sub{color:var(--muted);font-size:13px;margin-top:6px;letter-spacing:.02em}
+.tag{text-align:right;font-size:12px;color:var(--muted);line-height:1.7}
+.tag b{color:var(--ink);font-weight:700}
+.filterbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:24px}
+.flabel{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-right:4px;font-weight:600}
+.chip{border:1px solid var(--line);background:var(--panel);padding:7px 15px;border-radius:40px;font-size:12.5px;
+  cursor:pointer;font-weight:600;color:var(--muted);transition:.18s;font-family:'Archivo'}
+.chip:hover{border-color:var(--gold)}
+.chip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:26px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gold)}
+.kpi.g::before{background:var(--green)}.kpi.r::before{background:var(--red)}.kpi.a::before{background:var(--amber)}
+.kpi .lab{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kpi .val{font-family:'Fraunces',serif;font-weight:600;font-size:27px;margin-top:8px;line-height:1}
+.kpi .delta{font-size:11.5px;margin-top:7px;color:var(--muted);font-weight:500}
+.kpi .val.sm{font-size:23px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 24px;box-shadow:var(--shadow)}
+.card.full{grid-column:1/-1}
+.ctitle{font-family:'Fraunces',serif;font-weight:600;font-size:18px;display:flex;align-items:center;gap:9px;margin-bottom:3px}
+.ctitle .dot{width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.cdesc{color:var(--muted);font-size:12px;margin-bottom:16px}
+.chartbox{position:relative;height:300px}
+.chartbox.tall{height:380px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  font-weight:700;padding:9px 10px;border-bottom:2px solid var(--ink)}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+td{padding:9px 10px;border-bottom:1px solid var(--line)}
+tr:hover td{background:#faf6ee}
+.pos{color:var(--green);font-weight:600}.neg{color:var(--red);font-weight:600}
+.bar{display:inline-block;height:7px;border-radius:4px;vertical-align:middle}
+.acc{display:inline-flex;align-items:center;gap:7px;font-weight:700}
+.acc .pill{font-size:11px;padding:2px 9px;border-radius:20px;color:#fff}
+.mini{font-size:11px;color:var(--muted)}
+.note{background:#fbf3e3;border:1px solid #ecd9b0;border-left:4px solid var(--amber);border-radius:10px;
+  padding:14px 18px;font-size:13px;line-height:1.6;margin-bottom:18px}
+.note b{color:#8a5d12}
+.foot{text-align:center;color:var(--muted);font-size:11px;margin-top:30px;letter-spacing:.04em}
+.legend{display:flex;gap:18px;font-size:11.5px;color:var(--muted);margin-top:12px;flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sq{width:11px;height:11px;border-radius:3px;display:inline-block}
+@media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}}
+@media(max-width:640px){.kpis{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <div class="brand">Trousseau · Logística</div>
+    <h1>Dashboard de Inventário</h1>
+    <div class="sub">Análise de Acuracidade de Estoque — Inventário consolidado Abr / Mai 2026 · Conceito Real</div>
+  </div>
+  <div class="tag">
+    Base: <b>7.696</b> registros (SKU+Cor+Filial)<br>
+    Critério: <b>Acuracidade Real</b> (item correto = QTDE_DIF 0)<br>
+    Valoração: <b>Preço de Custo</b> (PC)
+  </div>
+</header>
+
+<div class="filterbar">
+  <span class="flabel">Filial</span>
+  <span class="chip active" data-fil="ALL" onclick="setFil(this,'ALL')">Todas</span>
+  <span id="filchips"></span>
+</div>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="note" id="alert"></div>
+
+<div class="grid">
+  <div class="card">
+    <div class="ctitle"><span class="dot"></span>Acuracidade por Grupo de Produto</div>
+    <div class="cdesc">Percentual de SKUs sem divergência (conceito real) — barras ordenadas por valor de saldo</div>
+    <div class="chartbox tall"><canvas id="cAcurGrp"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="ctitle"><span class="dot"></span>Composição do Saldo (Preço de Custo)</div>
+    <div class="cdesc">Distribuição do valor sistêmico por grupo — onde está concentrado o estoque</div>
+    <div class="chartbox tall"><canvas id="cValGrp"></canvas></div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <div class="ctitle"><span class="dot"></span>Divergência Financeira por Grupo</div>
+    <div class="cdesc">Diferença líquida (contado − sistema) em R$ a preço de custo · verde = sobra, vermelho = falta</div>
+    <div class="chartbox"><canvas id="cDifGrp"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="ctitle"><span class="dot"></span>Análise por Filial</div>
+    <div class="cdesc">Acuracidade real vs. impacto financeiro absoluto da divergência</div>
+    <div class="chartbox"><canvas id="cFilial"></canvas></div>
+  </div>
+</div>
+
+<div class="card full" style="margin-bottom:18px">
+  <div class="ctitle"><span class="dot"></span>Quadro Resumo — Contagem & Custo por Grupo</div>
+  <div class="cdesc">Peças contadas e saldo sistêmico, valor a preço de custo, divergência e Acuracidade Real de Estoque</div>
+  <div style="overflow-x:auto"><table id="tGrupo"></table></div>
+  <div class="legend">
+    <span><span class="sq" style="background:var(--green)"></span> Acuracidade ≥ 95%</span>
+    <span><span class="sq" style="background:var(--amber)"></span> 85–95%</span>
+    <span><span class="sq" style="background:var(--red)"></span> &lt; 85% — atenção</span>
+  </div>
+</div>
+
+<div class="card full" style="margin-bottom:18px">
+  <div class="ctitle"><span class="dot"></span>Resumo por Filial</div>
+  <div class="cdesc">Visão consolidada por centro de distribuição / canal</div>
+  <div style="overflow-x:auto"><table id="tFilial"></table></div>
+</div>
+
+<div class="card full">
+  <div class="ctitle"><span class="dot"></span>Top 10 Itens com Maior Divergência Financeira</div>
+  <div class="cdesc">Ordenado pelo módulo da diferença em R$ (preço de custo) — foco de recontagem e investigação</div>
+  <div style="overflow-x:auto"><table id="tTop"></table></div>
+</div>
+
+<div class="foot">Gerado a partir de Iventário_consolidado_Abr-Mai_2026.xlsx · Trousseau Logística · Valores em R$ a preço de custo</div>
+</div>
+
+<script>
+let DATA = {"kpi": {"qtde_ctg": 386420, "qtde_saldo": 387504, "ctg_pc": 22843382.01, "saldo_pc": 22895155.21, "dif_pc": -51773.2, "n": 7696, "ndif": 1586, "nok": 6110, "acur_item": 79.39, "acur_valor": 96.16, "sobra_q": 8305, "falta_q": -9389, "sobra_pc": 413715.65, "falta_pc": -465488.85, "abs_pc": 879204.5, "n_sobra": 748, "n_falta": 838}, "grupo": [{"GRUPO": "BANHO", "QTDE_CTG": 161352, "QTDE_SALDO": 162628, "CTG_PC": 7341029.49, "SALDO_PC": 7398698.3, "DIF_PC": -57668.81, "SKUs": 1181, "QTDE_DIF": -1276, "ACUR_ITEM": 62.07, "ABS_DIF_PC": 451737.15, "ACUR_VALOR": 93.89}, {"GRUPO": "CAMA", "QTDE_CTG": 25576, "QTDE_SALDO": 25633, "CTG_PC": 5481839.23, "SALDO_PC": 5496915.31, "DIF_PC": -15076.08, "SKUs": 2960, "QTDE_DIF": -57, "ACUR_ITEM": 89.26, "ABS_DIF_PC": 119147.34, "ACUR_VALOR": 97.83}, {"GRUPO": "FRAGRÂNCIA", "QTDE_CTG": 133228, "QTDE_SALDO": 133218, "CTG_PC": 2253188.04, "SALDO_PC": 2249484.98, "DIF_PC": 3703.06, "SKUs": 280, "QTDE_DIF": 10, "ACUR_ITEM": 37.5, "ABS_DIF_PC": 97652.58, "ACUR_VALOR": 95.66}, {"GRUPO": "MESA", "QTDE_CTG": 19389, "QTDE_SALDO": 19414, "CTG_PC": 2028810.81, "SALDO_PC": 2030850.28, "DIF_PC": -2039.47, "SKUs": 383, "QTDE_DIF": -25, "ACUR_ITEM": 57.44, "ABS_DIF_PC": 36746.23, "ACUR_VALOR": 98.19}, {"GRUPO": "COBERTOR / MANTA", "QTDE_CTG": 11248, "QTDE_SALDO": 11183, "CTG_PC": 1839547.66, "SALDO_PC": 1830976.32, "DIF_PC": 8571.34, "SKUs": 975, "QTDE_DIF": 65, "ACUR_ITEM": 88.92, "ABS_DIF_PC": 53822.54, "ACUR_VALOR": 97.06}, {"GRUPO": "RECHEIOS", "QTDE_CTG": 8664, "QTDE_SALDO": 8392, "CTG_PC": 1324747.34, "SALDO_PC": 1307804.38, "DIF_PC": 16942.96, "SKUs": 360, "QTDE_DIF": 272, "ACUR_ITEM": 65.28, "ABS_DIF_PC": 82399.02, "ACUR_VALOR": 93.7}, {"GRUPO": "HOMEWEAR", "QTDE_CTG": 7376, "QTDE_SALDO": 7374, "CTG_PC": 751831.56, "SALDO_PC": 751607.54, "DIF_PC": 224.02, "SKUs": 532, "QTDE_DIF": 2, "ACUR_ITEM": 86.09, "ABS_DIF_PC": 9207.84, "ACUR_VALOR": 98.77}, {"GRUPO": "HOMEWEAR FEMININO", "QTDE_CTG": 3333, "QTDE_SALDO": 3339, "CTG_PC": 602814.86, "SALDO_PC": 604097.88, "DIF_PC": -1283.02, "SKUs": 370, "QTDE_DIF": -6, "ACUR_ITEM": 90.81, "ABS_DIF_PC": 7128.64, "ACUR_VALOR": 98.82}, {"GRUPO": "HOMEWEAR MASCULINO", "QTDE_CTG": 4435, "QTDE_SALDO": 4441, "CTG_PC": 597477.34, "SALDO_PC": 599112.48, "DIF_PC": -1635.14, "SKUs": 208, "QTDE_DIF": -6, "ACUR_ITEM": 82.21, "ABS_DIF_PC": 6818.46, "ACUR_VALOR": 98.86}, {"GRUPO": "GIFT", "QTDE_CTG": 6840, "QTDE_SALDO": 6856, "CTG_PC": 395712.57, "SALDO_PC": 396221.73, "DIF_PC": -509.16, "SKUs": 351, "QTDE_DIF": -16, "ACUR_ITEM": 80.06, "ABS_DIF_PC": 6565.5, "ACUR_VALOR": 98.34}, {"GRUPO": "HOUSEWEAR", "QTDE_CTG": 1632, "QTDE_SALDO": 1626, "CTG_PC": 99512.3, "SALDO_PC": 99100.3, "DIF_PC": 412.0, "SKUs": 8, "QTDE_DIF": 6, "ACUR_ITEM": 62.5, "ABS_DIF_PC": 708.0, "ACUR_VALOR": 99.29}, {"GRUPO": "CALÇADOS", "QTDE_CTG": 2503, "QTDE_SALDO": 2505, "CTG_PC": 91262.02, "SALDO_PC": 90437.94, "DIF_PC": 824.08, "SKUs": 41, "QTDE_DIF": -2, "ACUR_ITEM": 70.73, "ABS_DIF_PC": 1762.0, "ACUR_VALOR": 98.05}, {"GRUPO": "LIFESTYLE", "QTDE_CTG": 381, "QTDE_SALDO": 415, "CTG_PC": 16008.2, "SALDO_PC": 19799.05, "DIF_PC": -3790.85, "SKUs": 28, "QTDE_DIF": -34, "ACUR_ITEM": 46.43, "ABS_DIF_PC": 4987.89, "ACUR_VALOR": 74.81}, {"GRUPO": "SPA", "QTDE_CTG": 439, "QTDE_SALDO": 456, "CTG_PC": 17037.15, "SALDO_PC": 17485.28, "DIF_PC": -448.13, "SKUs": 5, "QTDE_DIF": -17, "ACUR_ITEM": 20.0, "ABS_DIF_PC": 521.31, "ACUR_VALOR": 97.02}, {"GRUPO": "PETS", "QTDE_CTG": 24, "QTDE_SALDO": 24, "CTG_PC": 2563.44, "SALDO_PC": 2563.44, "DIF_PC": 0.0, "SKUs": 14, "QTDE_DIF": 0, "ACUR_ITEM": 100.0, "ABS_DIF_PC": 0.0, "ACUR_VALOR": 100.0}], "filial": [{"FILIAL": "EC-MM", "QTDE_CTG": 149782, "QTDE_SALDO": 150702, "CTG_PC": 14711419.46, "SALDO_PC": 14793651.59, "DIF_PC": -82232.13, "SKUs": 2771, "QTDE_DIF": -920, "ACUR_ITEM": 71.49, "ABS_DIF_PC": 380729.71, "ACUR_VALOR": 97.43}, {"FILIAL": "HOT-CORP", "QTDE_CTG": 194860, "QTDE_SALDO": 195189, "CTG_PC": 5242408.42, "SALDO_PC": 5210145.14, "DIF_PC": 32263.28, "SKUs": 1081, "QTDE_DIF": -329, "ACUR_ITEM": 67.35, "ABS_DIF_PC": 376344.44, "ACUR_VALOR": 92.78}, {"FILIAL": "E-COM", "QTDE_CTG": 14354, "QTDE_SALDO": 14366, "CTG_PC": 2167594.62, "SALDO_PC": 2183742.86, "DIF_PC": -16148.24, "SKUs": 3116, "QTDE_DIF": -12, "ACUR_ITEM": 89.18, "ABS_DIF_PC": 78902.36, "ACUR_VALOR": 96.39}, {"FILIAL": "DEV MIAMI", "QTDE_CTG": 27424, "QTDE_SALDO": 27224, "CTG_PC": 721959.51, "SALDO_PC": 705668.82, "DIF_PC": 16290.69, "SKUs": 716, "QTDE_DIF": 200, "ACUR_ITEM": 86.87, "ABS_DIF_PC": 41281.19, "ACUR_VALOR": 94.15}, {"FILIAL": "E-COM EUA", "QTDE_CTG": 0, "QTDE_SALDO": 23, "CTG_PC": 0.0, "SALDO_PC": 1946.8, "DIF_PC": -1946.8, "SKUs": 12, "QTDE_DIF": -23, "ACUR_ITEM": 0.0, "ABS_DIF_PC": 1946.8, "ACUR_VALOR": 0.0}], "top10": [{"PRODUTO": "331011290", "DESC_PRODUTO": "TOALHA BANHO NUBE 1,00MT X 1,70MT", "DESC_COR_PRODUTO": "BRANCO", "FILIAL": "EC-MM", "GRUPO": "BANHO", "QTDE_CTG": 8, "QTDE_SALDO": 463, "QTDE_DIF": -455, "DIF_PC": -50746.15}, {"PRODUTO": "331011290", "DESC_PRODUTO": "TOALHA BANHO NUBE 1,00MT X 1,70MT", "DESC_COR_PRODUTO": "BRANCO", "FILIAL": "HOT-CORP", "GRUPO": "BANHO", "QTDE_CTG": 454, "QTDE_SALDO": 1, "QTDE_DIF": 453, "DIF_PC": 50523.09}, {"PRODUTO": "337010733", "DESC_PRODUTO": "ROUPAO PLUSH", "DESC_COR_PRODUTO": "BRANCO", "FILIAL": "HOT-CORP", "GRUPO": "BANHO", "QTDE_CTG": 1093, "QTDE_SALDO": 1269, "QTDE_DIF": -176, "DIF_PC": -20702.88}, {"PRODUTO": "331011283", "DESC_PRODUTO": "TOALHA BANHO TROU SOHO 70CM X 1,40MT", "DESC_COR_PRODUTO": "BRANCO", "FILIAL": "HOT-CORP", "GRUPO": "BANHO", "QTDE_CTG": 29, "QTDE_SALDO": 548, "QTDE_DIF": -519, "DIF_PC": -18767.04}, {"PRODUTO": "337010611", "DESC_PRODUTO": "ROUPÃO PLUSH 3", "DESC_COR_PRODUTO": "BRANCO", "FILIAL": "HOT-CORP", "GRUPO": "BANHO", "QTDE_CTG": 266, "QTDE_SALDO": 134, "QTDE_DIF": 132, "DIF_PC": 17508.48}, {"PRODUTO": "331011279", "DESC_PRODUTO": "TOALHA BANHO TROU VILLAGE 90CM X 1,60MT", "DESC_COR_PRODUTO": "BRANCO", "FILIAL": "HOT-CORP", "GRUPO": "BANHO", "QTDE_CTG": 1439, "QTDE_SALDO": 1656, "QTDE_DIF": -217, "DIF_PC": -17501.05}, {"PRODUTO": "109010131", "DESC_PRODUTO": "COBERTOR MICROCOZY SOLT 1,80M X 2,30M", "DESC_COR_PRODUTO": "MARFIM", "FILIAL": "EC-MM", "GRUPO": "COBERTOR / MANTA", "QTDE_CTG": 95, "QTDE_SALDO": 7, "QTDE_DIF": 88, "DIF_PC": 14165.36}, {"PRODUTO": "339010646", "DESC_PRODUTO": "TOALHA ROSTO NUBE 50CM X 90CM", "DESC_COR_PRODUTO": "BRANCO", "FILIAL": "EC-MM", "GRUPO": "BANHO", "QTDE_CTG": 176, "QTDE_SALDO": 617, "QTDE_DIF": -441, "DIF_PC": -14103.18}, {"PRODUTO": "334010159", "DESC_PRODUTO": "TAPETE FRANCE 70X120", "DESC_COR_PRODUTO": "BRANCO", "FILIAL": "HOT-CORP", "GRUPO": "BANHO", "QTDE_CTG": 263, "QTDE_SALDO": 189, "QTDE_DIF": 74, "DIF_PC": 12074.58}, {"PRODUTO": "334010159", "DESC_PRODUTO": "TAPETE FRANCE 70X120", "DESC_COR_PRODUTO": "BRANCO", "FILIAL": "EC-MM", "GRUPO": "BANHO", "QTDE_CTG": 144, "QTDE_SALDO": 214, "QTDE_DIF": -70, "DIF_PC": -11421.9}], "top10q": [{"PRODUTO": "1102010091", "DESC_PRODUTO": "GUEST SHAMPOO PRINTEMPS 30 ML", "DESC_COR_PRODUTO": "UNICA", "FILIAL": "HOT-CORP", "GRUPO": "FRAGRÂNCIA", "QTDE_CTG": 15189, "QTDE_SALDO": 12710, "QTDE_DIF": 2479, "DIF_PC": 4313.46}, {"PRODUTO": "1102010093", "DESC_PRODUTO": "GUEST SABONETE LÍQ. PRINTEMPS 30 ML", "DESC_COR_PRODUTO": "UNICA", "FILIAL": "HOT-CORP", "GRUPO": "FRAGRÂNCIA", "QTDE_CTG": 2136, "QTDE_SALDO": 4515, "QTDE_DIF": -2379, "DIF_PC": -4258.41}, {"PRODUTO": "331011283", "DESC_PRODUTO": "TOALHA BANHO TROU SOHO 70CM X 1,40MT", "DESC_COR_PRODUTO": "BRANCO", "FILIAL": "HOT-CORP", "GRUPO": "BANHO", "QTDE_CTG": 29, "QTDE_SALDO": 548, "QTDE_DIF": -519, "DIF_PC": -18767.04}, {"PRODUTO": "331011290", "DESC_PRODUTO": "TOALHA BANHO NUBE 1,00MT X 1,70MT", "DESC_COR_PRODUTO": "BRANCO", "FILIAL": "EC-MM", "GRUPO": "BANHO", "QTDE_CTG": 8, "QTDE_SALDO": 463, "QTDE_DIF": -455, "DIF_PC": -50746.15}, {"PRODUTO": "331011290", "DESC_PRODUTO": "TOALHA BANHO NUBE 1,00MT X 1,70MT", "DESC_COR_PRODUTO": "BRANCO", "FILIAL": "HOT-CORP", "GRUPO": "BANHO", "QTDE_CTG": 454, "QTDE_SALDO": 1, "QTDE_DIF": 453, "DIF_PC": 50523.09}, {"PRODUTO": "339010646", "DESC_PRODUTO": "TOALHA ROSTO NUBE 50CM X 90CM", "DESC_COR_PRODUTO": "BRANCO", "FILIAL": "EC-MM", "GRUPO": "BANHO", "QTDE_CTG": 176, "QTDE_SALDO": 617, "QTDE_DIF": -441, "DIF_PC": -14103.18}, {"PRODUTO": "339010646", "DESC_PRODUTO": "TOALHA ROSTO NUBE 50CM X 90CM", "DESC_COR_PRODUTO": "BRANCO", "FILIAL": "HOT-CORP", "GRUPO": "BANHO", "QTDE_CTG": 345, "QTDE_SALDO": 1, "QTDE_DIF": 344, "DIF_PC": 11001.12}, {"PRODUTO": "331011279", "DESC_PRODUTO": "TOALHA BANHO TROU VILLAGE 90CM X 1,60MT", "DESC_COR_PRODUTO": "BRANCO", "FILIAL": "HOT-CORP", "GRUPO": "BANHO", "QTDE_CTG": 1439, "QTDE_SALDO": 1656, "QTDE_DIF": -217, "DIF_PC": -17501.05}, {"PRODUTO": "339010534", "DESC_PRODUTO": "TOALHA ROSTO TROU SOHO 50CM X 85CM", "DESC_COR_PRODUTO": "BRANCO", "FILIAL": "HOT-CORP", "GRUPO": "BANHO", "QTDE_CTG": 4487, "QTDE_SALDO": 4298, "QTDE_DIF": 189, "DIF_PC": 2935.17}, {"PRODUTO": "337010733", "DESC_PRODUTO": "ROUPAO PLUSH", "DESC_COR_PRODUTO": "BRANCO", "FILIAL": "HOT-CORP", "GRUPO": "BANHO", "QTDE_CTG": 1093, "QTDE_SALDO": 1269, "QTDE_DIF": -176, "DIF_PC": -20702.88}], "filiais": ["DEV MIAMI", "E-COM", "E-COM EUA", "EC-MM", "HOT-CORP"], "grupos": ["BANHO", "CAMA", "FRAGRÂNCIA", "MESA", "COBERTOR / MANTA", "RECHEIOS", "HOMEWEAR", "HOMEWEAR FEMININO", "HOMEWEAR MASCULINO", "GIFT", "HOUSEWEAR", "CALÇADOS", "LIFESTYLE", "SPA", "PETS"]};
+const BRL = v => 'R$ ' + Math.round(v).toLocaleString('pt-BR');
+const BRLk = v => { const a=Math.abs(v); if(a>=1e6) return 'R$ '+(v/1e6).toFixed(2)+' mi'; if(a>=1e3) return 'R$ '+(v/1e3).toFixed(0)+' mil'; return 'R$ '+Math.round(v); };
+const NUM = v => Math.round(v).toLocaleString('pt-BR');
+const PCT = v => v.toFixed(1)+'%';
+const acColor = a => a>=95?'var(--green)':a>=85?'var(--amber)':'var(--red)';
+const acHex = a => a>=95?'#2f6b4f':a>=85?'#c98a2b':'#b03a2e';
+
+const FONT="Archivo"; Chart.defaults.font.family=FONT; Chart.defaults.color="#857a6c";
+let charts={};
+
+function compute(fil){
+  const isAll = fil==='ALL';
+  // recompute group + kpi from filial-filtered? We have group totals only for ALL. For filial filter we use filial row.
+  return DATA;
+}
+
+function renderKPI(fil){
+  const k=DATA.kpi; let f=null;
+  if(fil!=='ALL') f=DATA.filial.find(x=>x.FILIAL===fil);
+  const ctgQ = f?f.QTDE_CTG:k.qtde_ctg;
+  const salQ = f?f.QTDE_SALDO:k.qtde_saldo;
+  const ctgPC= f?f.CTG_PC:k.ctg_pc;
+  const salPC= f?f.SALDO_PC:k.saldo_pc;
+  const difPC= f?f.DIF_PC:k.dif_pc;
+  const acItem = f?f.ACUR_ITEM:k.acur_item;
+  const acVal = f?f.ACUR_VALOR:k.acur_valor;
+  const difQ = ctgQ-salQ;
+  const cards=[
+    {lab:'Peças Contadas',val:NUM(ctgQ),d:'Saldo sistema: '+NUM(salQ),cls:''},
+    {lab:'Valor Contado (custo)',val:BRLk(ctgPC),d:'Saldo: '+BRLk(salPC),cls:''},
+    {lab:'Acuracidade Real',val:PCT(acItem),d:'itens sem divergência',cls:acItem>=85?'g':'r'},
+    {lab:'Acuracidade Financeira',val:PCT(acVal),d:'1 − |dif| / saldo',cls:acVal>=95?'g':'a'},
+    {lab:'Divergência em Peças',val:(difQ>=0?'+':'')+NUM(difQ),d:'contado − sistema',cls:difQ<0?'r':'g'},
+    {lab:'Impacto Financeiro',val:(difPC>=0?'+':'')+BRLk(difPC),d:'líquido a custo',cls:difPC<0?'r':'g'},
+  ];
+  document.getElementById('kpis').innerHTML = cards.map(c=>
+    `<div class="kpi ${c.cls}"><div class="lab">${c.lab}</div><div class="val ${c.val.length>9?'sm':''}">${c.val}</div><div class="delta">${c.d}</div></div>`).join('');
+}
+
+function renderAlert(){
+  const k=DATA.kpi;
+  document.getElementById('alert').innerHTML =
+   `<b>Leitura executiva:</b> a acuracidade real é de <b>${PCT(k.acur_item)}</b> (${NUM(k.nok)} de ${NUM(k.n)} itens corretos) e a financeira de <b>${PCT(k.acur_valor)}</b>. `+
+   `O impacto líquido é de <b>${BRL(k.dif_pc)}</b>, mas o erro absoluto movimentado soma <b>${BRL(k.abs_pc)}</b> — sinal de que sobras e faltas se compensam no agregado e mascaram divergências reais. `+
+   `Destaque: o Top 1 (Toalha Nube) aparece com falta na EC-MM e sobra equivalente na HOT-CORP, padrão clássico de <b>erro de transferência entre filiais</b>, não perda real.`;
+}
+
+function renderGroupTable(){
+  const rows=[...DATA.grupo].sort((a,b)=>b.SALDO_PC-a.SALDO_PC);
+  let h='<thead><tr><th>Grupo</th><th class="num">SKUs</th><th class="num">Qtd Contada</th><th class="num">Qtd Saldo</th><th class="num">Dif. Peças</th><th class="num">Valor Contado</th><th class="num">Valor Saldo</th><th class="num">Dif. R$ (custo)</th><th>Acuracidade Real</th></tr></thead><tbody>';
+  rows.forEach(r=>{
+    const dq=r.QTDE_DIF, dpc=r.DIF_PC;
+    h+=`<tr><td><b>${r.GRUPO}</b></td><td class="num">${NUM(r.SKUs)}</td><td class="num">${NUM(r.QTDE_CTG)}</td><td class="num">${NUM(r.QTDE_SALDO)}</td>`+
+       `<td class="num ${dq<0?'neg':dq>0?'pos':''}">${dq>0?'+':''}${NUM(dq)}</td>`+
+       `<td class="num">${BRL(r.CTG_PC)}</td><td class="num">${BRL(r.SALDO_PC)}</td>`+
+       `<td class="num ${dpc<0?'neg':dpc>0?'pos':''}">${dpc>0?'+':''}${BRL(dpc)}</td>`+
+       `<td><span class="acc"><span class="bar" style="width:${Math.max(6,r.ACUR_ITEM*.7)}px;background:${acColor(r.ACUR_ITEM)}"></span>`+
+       `<span class="pill" style="background:${acColor(r.ACUR_ITEM)}">${PCT(r.ACUR_ITEM)}</span></span></td></tr>`;
+  });
+  const k=DATA.kpi;
+  h+=`<tr style="border-top:2px solid var(--ink);font-weight:700;background:#faf6ee"><td>TOTAL GERAL</td><td class="num">${NUM(k.n)}</td><td class="num">${NUM(k.qtde_ctg)}</td><td class="num">${NUM(k.qtde_saldo)}</td>`+
+     `<td class="num neg">${NUM(k.qtde_ctg-k.qtde_saldo)}</td><td class="num">${BRL(k.ctg_pc)}</td><td class="num">${BRL(k.saldo_pc)}</td>`+
+     `<td class="num neg">${BRL(k.dif_pc)}</td><td><span class="pill" style="background:${acColor(k.acur_item)}">${PCT(k.acur_item)}</span></td></tr>`;
+  h+='</tbody>';
+  document.getElementById('tGrupo').innerHTML=h;
+}
+
+function renderFilialTable(){
+  const rows=[...DATA.filial].sort((a,b)=>b.SALDO_PC-a.SALDO_PC);
+  let h='<thead><tr><th>Filial</th><th class="num">SKUs</th><th class="num">Qtd Contada</th><th class="num">Qtd Saldo</th><th class="num">Valor Saldo (custo)</th><th class="num">Dif. R$</th><th class="num">Erro Abs. R$</th><th>Acur. Real</th><th>Acur. Financeira</th></tr></thead><tbody>';
+  rows.forEach(r=>{
+    h+=`<tr><td><b>${r.FILIAL}</b></td><td class="num">${NUM(r.SKUs)}</td><td class="num">${NUM(r.QTDE_CTG)}</td><td class="num">${NUM(r.QTDE_SALDO)}</td>`+
+       `<td class="num">${BRL(r.SALDO_PC)}</td><td class="num ${r.DIF_PC<0?'neg':'pos'}">${r.DIF_PC>0?'+':''}${BRL(r.DIF_PC)}</td>`+
+       `<td class="num">${BRL(r.ABS_DIF_PC)}</td>`+
+       `<td><span class="pill" style="background:${acColor(r.ACUR_ITEM)}">${PCT(r.ACUR_ITEM)}</span></td>`+
+       `<td><span class="pill" style="background:${acColor(r.ACUR_VALOR)}">${PCT(r.ACUR_VALOR)}</span></td></tr>`;
+  });
+  h+='</tbody>';
+  document.getElementById('tFilial').innerHTML=h;
+}
+
+function renderTop(){
+  let h='<thead><tr><th>#</th><th>Produto</th><th>Descrição</th><th>Cor</th><th>Filial</th><th>Grupo</th><th class="num">Contado</th><th class="num">Saldo</th><th class="num">Dif. Pç</th><th class="num">Dif. R$ (custo)</th></tr></thead><tbody>';
+  DATA.top10.forEach((r,i)=>{
+    h+=`<tr><td><b>${i+1}</b></td><td class="mini">${r.PRODUTO}</td><td>${r.DESC_PRODUTO}</td><td class="mini">${r.DESC_COR_PRODUTO}</td>`+
+       `<td>${r.FILIAL}</td><td class="mini">${r.GRUPO}</td><td class="num">${NUM(r.QTDE_CTG)}</td><td class="num">${NUM(r.QTDE_SALDO)}</td>`+
+       `<td class="num ${r.QTDE_DIF<0?'neg':'pos'}">${r.QTDE_DIF>0?'+':''}${NUM(r.QTDE_DIF)}</td>`+
+       `<td class="num ${r.DIF_PC<0?'neg':'pos'}">${r.DIF_PC>0?'+':''}${BRL(r.DIF_PC)}</td></tr>`;
+  });
+  h+='</tbody>';
+  document.getElementById('tTop').innerHTML=h;
+}
+
+function buildCharts(){
+  const g=[...DATA.grupo].sort((a,b)=>b.SALDO_PC-a.SALDO_PC);
+  const gAcur=[...DATA.grupo].sort((a,b)=>a.ACUR_ITEM-b.ACUR_ITEM);
+  if(charts.a)Object.values(charts).forEach(c=>c.destroy());
+
+  charts.a=new Chart(document.getElementById('cAcurGrp'),{type:'bar',data:{
+    labels:gAcur.map(r=>r.GRUPO),
+    datasets:[{data:gAcur.map(r=>r.ACUR_ITEM),backgroundColor:gAcur.map(r=>acHex(r.ACUR_ITEM)),borderRadius:5,barThickness:14}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'Acuracidade: '+c.raw.toFixed(1)+'%'}}},
+      scales:{x:{max:100,grid:{color:'#eee5d6'},ticks:{callback:v=>v+'%'}},y:{grid:{display:false},ticks:{font:{size:10.5}}}},maintainAspectRatio:false}});
+
+  charts.v=new Chart(document.getElementById('cValGrp'),{type:'doughnut',data:{
+    labels:g.map(r=>r.GRUPO),
+    datasets:[{data:g.map(r=>r.SALDO_PC),backgroundColor:['#b08d4f','#2f6b4f','#c98a2b','#8a5d3b','#6b8a7a','#a3884f','#4f6b8a','#b03a2e','#d4b87a','#7a6b4f','#5a7a5a','#9a7a5a','#c4a87a','#6a5a4a','#aa9a7a']}]},
+    options:{cutout:'58%',plugins:{legend:{position:'right',labels:{font:{size:10.5},boxWidth:11,padding:7}},
+      tooltip:{callbacks:{label:c=>c.label+': '+BRLk(c.raw)+' ('+(c.raw/DATA.kpi.saldo_pc*100).toFixed(1)+'%)'}}},maintainAspectRatio:false}});
+
+  const gd=[...DATA.grupo].filter(r=>Math.abs(r.DIF_PC)>1).sort((a,b)=>a.DIF_PC-b.DIF_PC);
+  charts.d=new Chart(document.getElementById('cDifGrp'),{type:'bar',data:{
+    labels:gd.map(r=>r.GRUPO),
+    datasets:[{data:gd.map(r=>r.DIF_PC),backgroundColor:gd.map(r=>r.DIF_PC<0?'#b03a2e':'#2f6b4f'),borderRadius:4,barThickness:15}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'Dif: '+BRL(c.raw)}}},
+      scales:{x:{grid:{color:'#eee5d6'},ticks:{callback:v=>BRLk(v)}},y:{grid:{display:false},ticks:{font:{size:10.5}}}},maintainAspectRatio:false}});
+
+  const f=[...DATA.filial].sort((a,b)=>b.SALDO_PC-a.SALDO_PC);
+  charts.f=new Chart(document.getElementById('cFilial'),{data:{
+    labels:f.map(r=>r.FILIAL),
+    datasets:[
+      {type:'bar',label:'Erro absoluto (R$)',data:f.map(r=>r.ABS_DIF_PC),backgroundColor:'#d4b87a',borderRadius:5,yAxisID:'y',order:2},
+      {type:'line',label:'Acuracidade Real (%)',data:f.map(r=>r.ACUR_ITEM),borderColor:'#2f6b4f',backgroundColor:'#2f6b4f',
+        pointRadius:5,pointBackgroundColor:'#2f6b4f',tension:.3,yAxisID:'y1',order:1}]},
+    options:{plugins:{legend:{labels:{font:{size:11},boxWidth:12}},tooltip:{callbacks:{label:c=>c.dataset.type==='line'?'Acur: '+c.raw.toFixed(1)+'%':'Erro abs: '+BRL(c.raw)}}},
+      scales:{y:{position:'left',grid:{color:'#eee5d6'},ticks:{callback:v=>BRLk(v)},title:{display:true,text:'Erro absoluto R$',font:{size:10}}},
+        y1:{position:'right',max:100,grid:{display:false},ticks:{callback:v=>v+'%'},title:{display:true,text:'Acuracidade %',font:{size:10}}}},maintainAspectRatio:false}});
+}
+
+function setFil(el,fil){
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderKPI(fil);
+}
+
+function render(){
+  document.getElementById('filchips').innerHTML = DATA.filiais.map(f=>
+    `<span class="chip" data-fil="${f}" onclick="setFil(this,'${f}')">${f}</span>`).join('');
+  renderKPI('ALL'); renderAlert(); renderGroupTable(); renderFilialTable(); renderTop(); buildCharts();
+}
+
+// Quando servido por HTTP (ex.: GitHub Pages), tenta carregar os dados externos
+// e mantém os dados embutidos como fallback ao abrir o arquivo localmente.
+function init(){
+  fetch('data/dashboard_data.json')
+    .then(r => { if(!r.ok) throw new Error('no fetch'); return r.json(); })
+    .then(j => { DATA = j; render(); })
+    .catch(() => render());
+}
+init();
+</script>
+</body>
+</html>
